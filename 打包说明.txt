@@ -1,0 +1,75 @@
+# 派单表单 - MSC For Android V1.0
+
+## 打包说明
+
+### 第一步：安装 Node.js
+1. 访问 https://nodejs.org/
+2. 下载 LTS 版本（推荐）
+3. 安装时勾选 "Add to PATH"
+4. 安装完成后打开命令提示符，输入 `node --version` 验证
+
+### 第二步：安装 Android SDK（可选，如需直接生成APK）
+1. 访问 https://developer.android.com/studio
+2. 下载 Android Studio
+3. 安装后打开，在 SDK Manager 中下载：
+   - Android SDK Platform
+   - Android SDK Build-Tools
+   - Android SDK Command-line Tools
+
+### 第三步：安装依赖
+1. 打开命令提示符，进入项目目录：
+   ```
+   cd d:\github\MCS
+   ```
+2. 安装项目依赖：
+   ```
+   npm install
+   ```
+
+### 第四步：初始化 Capacitor
+```
+npx cap init MCS com.mcs.app --web-dir=.
+```
+
+### 第五步：添加 Android 平台
+```
+npx cap add android
+```
+
+### 第六步：同步网页到 Android 项目
+```
+npx cap sync android
+```
+
+### 第七步：打开 Android Studio 打包
+```
+npx cap open android
+```
+在 Android Studio 中点击 Build → Generate Signed Bundle / APK → 选择 APK → 选择保存位置
+
+---
+
+## 更新版本号
+修改 `package.json` 中的 `version` 字段，例如：
+- V1.0 → V1.1
+- V1.0 → V2.0
+
+修改 `android/app/build.gradle` 中的 `versionCode`（需要比上次大）:
+- 1 → 2
+- 1 → 10
+
+然后重新执行：
+```
+npx cap sync android
+npx cap open android
+```
+
+## 快速打包命令
+安装完所有工具后，只需执行以下命令即可：
+```
+npm install
+npx cap init MCS com.mcs.app --web-dir=.
+npx cap add android
+npx cap sync android
+npx cap open android
+```

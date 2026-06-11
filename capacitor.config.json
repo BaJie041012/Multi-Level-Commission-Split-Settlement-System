@@ -1,0 +1,8 @@
+{
+  "appId": "com.mcs.app",
+  "appName": "MCS",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  }
+}

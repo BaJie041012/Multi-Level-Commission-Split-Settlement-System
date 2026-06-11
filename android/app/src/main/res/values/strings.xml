@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MCS</string>
+    <string name="title_activity_main">MCS</string>
+    <string name="package_name">com.mcs.app</string>
+    <string name="custom_url_scheme">com.mcs.app</string>
+</resources>
