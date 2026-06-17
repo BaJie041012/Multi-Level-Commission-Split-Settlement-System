@@ -1,466 +1,999 @@
 <!DOCTYPE html>
+<!--
+  * @file index.html
+  * @description MCS (Multi-Level Commission Split Settlement System) - 多级抽成分账系统
+  *              本文件为系统主页面，包含普陪和礼物/选送两种派单类型的抽成计算功能
+  * @author 戒者有八
+  * @version 2.12
+  * @date 2026-06-17
+  *
+  * 更新历史：
+  *   v1.0 - 初始版本
+  *   v1.1 - 一键复制优化
+  *   v1.2 - 时长输入验证
+  *   v1.3 - 时长计算规则
+  *   v1.4 - 备注为空时不显示短横杠
+  *   v2.0 - 新增首页导航，抽成规则重构
+  *   v2.1 - 普陪和礼物抽成规则分别
+  *   v2.2 - 深夜+5仅作备注，派抽接抽独立显示
+  *   v2.3 - 派抽接抽互斥显示逻辑修复
+  *   v2.4 - 礼物/选送分区改造（类型选择、份数、移除加价）
+  *   v2.5 - 礼物/选送抽成基于单价，份数自动读取
+  *   v2.6 - 份数不显示在复制内容中
+  *   v2.7 - 份数不显示在结果页面
+-->
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>派单表单</title>
+  <title>MCS</title>
   <style>
+    /* ============================================
+     * 全局重置样式
+     * 重置浏览器默认的 margin 和 padding，
+     * 并设置 box-sizing 为 border-box 让宽高计算更直观
+     * ============================================ */
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+      margin: 0;             /* 移除所有元素默认外边距 */
+      padding: 0;            /* 移除所有元素默认内边距 */
+      box-sizing: border-box; /* 设置盒模型为 border-box */
     }
+
+    /* ============================================
+     * body 主体样式
+     * 设置全局字体、紫蓝渐变背景和最小高度
+     * ============================================ */
     body {
+      /* 字体栈：优先使用系统字体，保证各平台显示效果 */
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      /* 紫蓝渐变背景：135度角，从 #667eea 到 #764ba2 */
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* 最小高度为视口高度，确保渐变背景填满整个屏幕 */
       min-height: 100vh;
+      /* 页面内边距，让内容与边缘有一定距离 */
       padding: 20px;
     }
+
+    /* ============================================
+     * 容器样式
+     * 居中显示并限制最大宽度，适合手机屏幕
+     * ============================================ */
     .container {
+      /* 最大宽度 400px，适合手机屏幕显示 */
       max-width: 400px;
+      /* 上下边距为0，左右自动居中 */
       margin: 0 auto;
     }
+
+    /* ============================================
+     * 卡片样式
+     * 白色背景、圆角、阴影效果，用于包裹表单内容
+     * ============================================ */
     .card {
+      /* 白色背景 */
       background: #fff;
+      /* 圆角 16px */
       border-radius: 16px;
+      /* 内边距 20px */
       padding: 20px;
+      /* 阴影效果：水平0、垂直10px、模糊40px、颜色 rgba(0,0,0,0.15) */
       box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      /* 卡片之间间距 15px */
       margin-bottom: 15px;
     }
+
+    /* ============================================
+     * 卡片标题样式
+     * 包含标题文字和左侧装饰条
+     * ============================================ */
     .card-title {
+      /* 字体大小 18px */
       font-size: 18px;
+      /* 字体粗细 600（半粗） */
       font-weight: 600;
+      /* 文字颜色 深灰 */
       color: #333;
+      /* 标题下方间距 */
       margin-bottom: 15px;
+      /* 标题底部内边距 */
       padding-bottom: 10px;
+      /* 底部边框，浅灰色 2px */
       border-bottom: 2px solid #f0f0f0;
+      /* 使用 flex 布局，让装饰条和文字水平排列 */
       display: flex;
+      /* 垂直居中对齐 */
       align-items: center;
+      /* 装饰条和文字间距 */
       gap: 8px;
     }
+
+    /* 卡片标题左侧的装饰条（伪元素） */
     .card-title::before {
+      /* 必须设置 content 才能显示伪元素 */
       content: '';
+      /* 装饰条宽度 */
       width: 4px;
+      /* 装饰条高度 */
       height: 18px;
+      /* 装饰条使用紫蓝渐变 */
       background: linear-gradient(135deg, #667eea, #764ba2);
+      /* 装饰条圆角 */
       border-radius: 2px;
     }
+
+    /* ============================================
+     * 表单组样式
+     * 每个输入项的容器，控制上下间距
+     * ============================================ */
     .form-group {
+      /* 表单组之间间距 */
       margin-bottom: 15px;
     }
+
+    /* 表单组的 label 标签 */
     .form-group label {
+      /* 块级显示，独占一行 */
       display: block;
+      /* 字体大小 */
       font-size: 14px;
+      /* 文字颜色，灰色 */
       color: #666;
+      /* label 与输入框的间距 */
       margin-bottom: 6px;
+      /* 字体粗细 500（中等） */
       font-weight: 500;
     }
+
+    /* 表单组内的输入框、下拉、文本域通用样式 */
     .form-group input,
     .form-group select,
     .form-group textarea {
+      /* 宽度填满父容器 */
       width: 100%;
+      /* 内边距 */
       padding: 12px 14px;
+      /* 边框：2px 浅灰色 */
       border: 2px solid #e8e8e8;
+      /* 圆角 10px */
       border-radius: 10px;
+      /* 字体大小 */
       font-size: 15px;
+      /* 过渡动画，所有属性变化 0.3s */
       transition: all 0.3s ease;
+      /* 输入框背景色，浅灰 */
       background: #fafafa;
     }
+
+    /* 输入框聚焦时的样式 */
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
+      /* 移除默认的聚焦轮廓 */
       outline: none;
+      /* 聚焦时边框变为紫色 */
       border-color: #667eea;
+      /* 聚焦时背景变为白色 */
       background: #fff;
+      /* 聚焦时显示光晕效果：3px 紫色透明阴影 */
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
+
+    /* ============================================
+     * 表单行样式
+     * 用于将多个表单项并排显示（如时长和单价）
+     * ============================================ */
     .form-row {
+      /* flex 布局 */
       display: flex;
+      /* 子元素之间间距 */
       gap: 10px;
     }
+
+    /* 表单行内的表单组等分宽度 */
     .form-row .form-group {
+      /* flex: 1 表示等分剩余空间 */
       flex: 1;
     }
+
+    /* ============================================
+     * 按钮基础样式
+     * 所有按钮的通用外观
+     * ============================================ */
     .btn {
+      /* 宽度填满父容器 */
       width: 100%;
+      /* 内边距 */
       padding: 14px;
+      /* 移除默认边框 */
       border: none;
+      /* 圆角 */
       border-radius: 10px;
+      /* 字体大小 */
       font-size: 16px;
+      /* 字体粗细 */
       font-weight: 600;
+      /* 鼠标指针为手型 */
       cursor: pointer;
+      /* 过渡动画 */
       transition: all 0.3s ease;
     }
+
+    /* 主按钮样式（紫蓝渐变） */
     .btn-primary {
+      /* 紫蓝渐变背景 */
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* 文字白色 */
       color: #fff;
+      /* 阴影效果 */
       box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
+
+    /* 主按钮按下效果 */
     .btn-primary:active {
+      /* 按下时缩小到 98%，提供视觉反馈 */
       transform: scale(0.98);
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
     }
+
+    /* 次按钮样式（灰色） */
     .btn-secondary {
-      background: #f0f0f0;
+      /* 浅灰色背景 */
+      background: #f5f5f5;
+      /* 文字灰色 */
       color: #666;
-      margin-top: 10px;
     }
+
+    /* 次按钮按下效果 */
     .btn-secondary:active {
-      background: #e0e0e0;
+      /* 按下时背景稍微变深 */
+      background: #eee;
     }
+
+    /* ============================================
+     * 结果卡片样式
+     * 显示计算结果，与表单卡片样式类似
+     * ============================================ */
+    .result-card {
+      /* 白色背景 */
+      background: #fff;
+      /* 圆角 */
+      border-radius: 16px;
+      /* 内边距 */
+      padding: 20px;
+      /* 阴影效果 */
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    /* 结果区域（用于分组） */
     .result-section {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border-radius: 10px;
-      padding: 15px;
-      margin-top: 15px;
+      /* 区域之间间距 */
+      margin-bottom: 15px;
     }
+
+    /* ============================================
+     * 结果项样式
+     * 显示单个结果行（如"接待：xxx"）
+     * ============================================ */
     .result-item {
+      /* flex 布局，让 label 和 value 两端对齐 */
       display: flex;
+      /* 两端对齐 */
       justify-content: space-between;
+      /* 垂直居中 */
+      align-items: center;
+      /* 上下内边距 */
       padding: 10px 0;
-      border-bottom: 1px solid #dee2e6;
+      /* 底部边框，分隔每行 */
+      border-bottom: 1px solid #f0f0f0;
     }
+
+    /* 最后一个结果项不显示底部边框 */
     .result-item:last-child {
+      /* 移除最后一个项的边框 */
       border-bottom: none;
     }
+
+    /* 结果项的标签（左侧文字） */
     .result-item label {
+      /* 字体大小 */
       font-size: 14px;
+      /* 文字颜色，灰色 */
       color: #666;
+      /* 字体粗细 */
+      font-weight: 500;
     }
+
+    /* 结果项的值（右侧内容） */
     .result-item value {
+      /* 字体大小 */
+      font-size: 14px;
+      /* 文字颜色，深灰 */
+      color: #333;
+      /* 字体粗细 */
+      font-weight: 600;
+    }
+
+    /* 高亮显示的结果项值（紫色） */
+    .result-item.value-highlight value {
+      /* 紫色文字 */
+      color: #764ba2;
+      /* 稍大的字体 */
       font-size: 16px;
-      font-weight: 600;
-      color: #333;
     }
-    .result-item.highlight value {
-      color: #667eea;
-      font-size: 18px;
+
+    /* 红色结果项值 */
+    .result-item.value-red value {
+      /* 红色文字 */
+      color: #e74c3c;
     }
-    .copy-success {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.8);
-      color: #fff;
-      padding: 15px 30px;
-      border-radius: 10px;
-      font-size: 14px;
-      z-index: 1000;
-      opacity: 0;
-      transition: opacity 0.3s ease;
+
+    /* 绿色结果项值（用于到手价） */
+    .result-item.value-green value {
+      /* 绿色文字 */
+      color: #27ae60;
     }
-    .copy-success.show {
-      opacity: 1;
-    }
-    .manual-copy-box {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .manual-copy-content {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      max-width: 90%;
-      max-height: 80%;
-      overflow: auto;
-    }
-    .manual-copy-content h3 {
-      margin-bottom: 15px;
-      color: #333;
-    }
-    .manual-copy-content textarea {
+
+    /* ============================================
+     * 复制按钮样式
+     * 用于一键复制计算结果
+     * ============================================ */
+    .copy-btn {
+      /* 宽度填满 */
       width: 100%;
-      min-height: 200px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      resize: vertical;
-    }
-    .manual-copy-content button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background: #667eea;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-    }
-    .rules-btn {
-      background: none;
-      border: none;
-      color: #667eea;
-      font-size: 13px;
-      cursor: pointer;
-      padding: 5px 0;
-      margin-top: 10px;
-    }
-    .rules-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 2000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-    .rules-modal.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    .rules-content {
-      background: #fff;
-      border-radius: 16px;
-      padding: 25px;
-      max-width: 360px;
-      max-height: 80vh;
-      overflow-y: auto;
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
-    .rules-modal.show .rules-content {
-      transform: scale(1);
-    }
-    .rules-content h3 {
-      color: #333;
-      margin-bottom: 20px;
-      font-size: 18px;
-    }
-    .rules-content .rule-section {
-      margin-bottom: 20px;
-    }
-    .rules-content .rule-section h4 {
-      color: #667eea;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-    .rules-content .rule-section p {
-      color: #666;
-      font-size: 13px;
-      line-height: 1.6;
-      margin-bottom: 5px;
-    }
-    .rules-content .close-btn {
-      width: 100%;
+      /* 内边距 */
       padding: 12px;
-      background: #f0f0f0;
+      /* 浅灰背景 */
+      background: #f5f5f5;
+      /* 移除边框 */
       border: none;
+      /* 圆角 */
       border-radius: 10px;
+      /* 文字颜色 */
       color: #666;
+      /* 字体粗细 */
       font-weight: 600;
-      margin-top: 15px;
+      /* 上方间距 */
+      margin-top: 10px;
+      /* 手型指针 */
       cursor: pointer;
-    }
-    .input-hint {
-      font-size: 12px;
-      color: #999;
-      margin-top: 5px;
-    }
-    .input-row {
+      /* flex 布局让图标和文字居中 */
       display: flex;
+      /* 垂直居中 */
       align-items: center;
+      /* 水平居中 */
+      justify-content: center;
+      /* 图标和文字间距 */
       gap: 8px;
     }
-    .input-row span {
+
+    /* 复制按钮按下效果 */
+    .copy-btn:active {
+      /* 按下时背景变深 */
+      background: #eee;
+    }
+
+    /* ============================================
+     * 复制成功提示框样式
+     * 显示"已复制到剪贴板"的提示
+     * ============================================ */
+    .copy-success {
+      /* 固定定位 */
+      position: fixed;
+      /* 顶部居中 */
+      top: 50%;
+      /* 左侧居中 */
+      left: 50%;
+      /* 居中变换 */
+      transform: translate(-50%, -50%);
+      /* 半透明黑色背景 */
+      background: rgba(0,0,0,0.8);
+      /* 文字白色 */
+      color: #fff;
+      /* 内边距 */
+      padding: 15px 30px;
+      /* 圆角 */
+      border-radius: 10px;
+      /* 字体大小 */
+      font-size: 16px;
+      /* 层级，确保在最上层 */
+      z-index: 1000;
+      /* 默认透明 */
+      opacity: 0;
+      /* 默认隐藏 */
+      visibility: hidden;
+      /* 过渡动画 */
+      transition: all 0.3s ease;
+    }
+
+    /* 复制成功提示框显示状态 */
+    .copy-success.show {
+      /* 完全不透明 */
+      opacity: 1;
+      /* 可见 */
+      visibility: visible;
+    }
+
+    /* ============================================
+     * 抽成规则按钮样式
+     * 用于显示抽成规则说明
+     * ============================================ */
+    .rules-btn {
+      /* 透明背景 */
+      background: none;
+      /* 移除边框 */
+      border: none;
+      /* 紫色文字 */
+      color: #667eea;
+      /* 字体大小 */
+      font-size: 13px;
+      /* 手型指针 */
+      cursor: pointer;
+      /* 内边距 */
+      padding: 5px 0;
+      /* 上方间距 */
+      margin-top: 10px;
+    }
+
+    /* ============================================
+     * 抽成规则弹窗遮罩层
+     * 全屏半透明背景
+     * ============================================ */
+    .rules-modal {
+      /* 固定定位覆盖整个屏幕 */
+      position: fixed;
+      /* 顶部对齐 */
+      top: 0;
+      /* 左侧对齐 */
+      left: 0;
+      /* 右侧对齐 */
+      right: 0;
+      /* 底部对齐 */
+      bottom: 0;
+      /* 半透明黑色背景 */
+      background: rgba(0,0,0,0.6);
+      /* 层级，确保在内容之上 */
+      z-index: 2000;
+      /* flex 居中弹窗内容 */
+      display: flex;
+      /* 垂直居中 */
+      align-items: center;
+      /* 水平居中 */
+      justify-content: center;
+      /* 内边距 */
+      padding: 20px;
+      /* 默认透明 */
+      opacity: 0;
+      /* 默认隐藏 */
+      visibility: hidden;
+      /* 过渡动画 */
+      transition: all 0.3s ease;
+    }
+
+    /* 弹窗显示状态 */
+    .rules-modal.show {
+      /* 完全不透明 */
+      opacity: 1;
+      /* 可见 */
+      visibility: visible;
+    }
+
+    /* ============================================
+     * 弹窗内容样式
+     * 弹窗内的白色内容区域
+     * ============================================ */
+    .rules-content {
+      /* 白色背景 */
+      background: #fff;
+      /* 圆角 */
+      border-radius: 16px;
+      /* 内边距 */
+      padding: 25px;
+      /* 最大宽度 */
+      max-width: 360px;
+      /* 最大高度为视口的 80% */
+      max-height: 80vh;
+      /* 内容超出时可滚动 */
+      overflow-y: auto;
+      /* 默认缩小显示，配合 show 类有放大动画 */
+      transform: scale(0.9);
+      /* 过渡动画 */
+      transition: transform 0.3s ease;
+    }
+
+    /* 弹窗显示时内容恢复原始大小 */
+    .rules-modal.show .rules-content {
+      /* 完全显示 */
+      transform: scale(1);
+    }
+
+    /* 弹窗标题 */
+    .rules-content h3 {
+      /* 文字颜色 */
+      color: #333;
+      /* 标题下方间距 */
+      margin-bottom: 20px;
+      /* 字体大小 */
+      font-size: 18px;
+    }
+
+    /* 弹窗内每个规则分组 */
+    .rules-content .rule-section {
+      /* 分组之间间距 */
+      margin-bottom: 20px;
+    }
+
+    /* 分组标题（如"团抽"、"派抽"） */
+    .rules-content .rule-section h4 {
+      /* 紫色 */
+      color: #667eea;
+      /* 字体大小 */
+      font-size: 14px;
+      /* 标题下方间距 */
+      margin-bottom: 8px;
+    }
+
+    /* 分组内的说明文字 */
+    .rules-content .rule-section p {
+      /* 文字颜色 */
+      color: #666;
+      /* 字体大小 */
+      font-size: 13px;
+      /* 行高，便于阅读 */
+      line-height: 1.6;
+      /* 段落之间间距 */
+      margin-bottom: 5px;
+    }
+
+    /* 弹窗关闭按钮 */
+    .rules-content .close-btn {
+      /* 宽度填满 */
+      width: 100%;
+      /* 内边距 */
+      padding: 12px;
+      /* 浅灰背景 */
+      background: #f0f0f0;
+      /* 移除边框 */
+      border: none;
+      /* 圆角 */
+      border-radius: 10px;
+      /* 文字颜色 */
+      color: #666;
+      /* 字体粗细 */
+      font-weight: 600;
+      /* 上方间距 */
+      margin-top: 15px;
+      /* 手型指针 */
+      cursor: pointer;
+    }
+
+    /* ============================================
+     * 输入提示文字样式
+     * 表单输入框下方的灰色提示文字
+     * ============================================ */
+    .input-hint {
+      /* 字体大小 */
+      font-size: 12px;
+      /* 文字颜色，浅灰 */
       color: #999;
+      /* 顶部间距 */
+      margin-top: 5px;
+    }
+
+    /* ============================================
+     * 输入行样式
+     * 包含输入框和单位后缀（如"h"或"份"）
+     * ============================================ */
+    .input-row {
+      /* flex 布局 */
+      display: flex;
+      /* 垂直居中 */
+      align-items: center;
+      /* 子元素间距 */
+      gap: 8px;
+    }
+
+    /* 输入行内的单位文字（如 h、份） */
+    .input-row span {
+      /* 文字颜色，浅灰 */
+      color: #999;
+      /* 字体大小 */
       font-size: 14px;
     }
+
+    /* ============================================
+     * 复选框标签样式
+     * 用于"团内点单"等复选框+文字的组合
+     * ============================================ */
     .checkbox-label {
+      /* flex 布局 */
       display: flex;
+      /* 垂直居中 */
       align-items: center;
+      /* 复选框和文字间距 */
       gap: 10px;
+      /* 手型指针 */
       cursor: pointer;
+      /* 正常字重（覆盖 label 的 500） */
       font-weight: normal;
     }
+
+    /* 复选框样式 */
     .checkbox-label input[type="checkbox"] {
+      /* 宽度 */
       width: 20px;
+      /* 高度 */
       height: 20px;
+      /* 选中颜色为紫色 */
       accent-color: #667eea;
+      /* 手型指针 */
       cursor: pointer;
     }
+
+    /* 复选框旁的文字 */
     .checkbox-label span {
+      /* 文字颜色 */
       color: #666;
+      /* 字体大小 */
       font-size: 15px;
+    }
+
+    /* ============================================
+     * 手动复制弹窗
+     * 自动复制失败时显示，让用户手动复制
+     * ============================================ */
+    .manual-copy-box {
+      /* 默认隐藏 */
+      display: none;
+      /* 固定定位覆盖整个屏幕 */
+      position: fixed;
+      /* 顶部 */
+      top: 0;
+      /* 左侧 */
+      left: 0;
+      /* 右侧 */
+      right: 0;
+      /* 底部 */
+      bottom: 0;
+      /* 半透明黑色背景 */
+      background: rgba(0,0,0,0.5);
+      /* 层级 */
+      z-index: 1000;
+      /* flex 居中内容 */
+      justify-content: center;
+      /* 垂直居中 */
+      align-items: center;
+    }
+
+    /* 手动复制弹窗内容 */
+    .manual-copy-content {
+      /* 白色背景 */
+      background: #fff;
+      /* 圆角 */
+      border-radius: 12px;
+      /* 内边距 */
+      padding: 20px;
+      /* 最大宽度为屏幕的 90% */
+      max-width: 90%;
+      /* 最大高度为屏幕的 80% */
+      max-height: 80%;
+      /* 内容超出时可滚动 */
+      overflow: auto;
+    }
+
+    /* 手动复制弹窗标题 */
+    .manual-copy-content h3 {
+      /* 标题下方间距 */
+      margin-bottom: 15px;
+      /* 文字颜色 */
+      color: #333;
+    }
+
+    /* 手动复制的文本域 */
+    .manual-copy-content textarea {
+      /* 宽度填满 */
+      width: 100%;
+      /* 最小高度 */
+      min-height: 200px;
+      /* 内边距 */
+      padding: 10px;
+      /* 边框 */
+      border: 1px solid #ddd;
+      /* 圆角 */
+      border-radius: 8px;
+      /* 字体大小 */
+      font-size: 14px;
+      /* 允许垂直方向调整大小 */
+      resize: vertical;
+    }
+
+    /* 手动复制弹窗按钮 */
+    .manual-copy-content button {
+      /* 顶部间距 */
+      margin-top: 10px;
+      /* 内边距 */
+      padding: 10px 20px;
+      /* 紫色背景 */
+      background: #667eea;
+      /* 文字白色 */
+      color: #fff;
+      /* 移除边框 */
+      border: none;
+      /* 圆角 */
+      border-radius: 8px;
+      /* 手型指针 */
+      cursor: pointer;
+      /* 宽度填满 */
+      width: 100%;
+    }
+
+    /* ============================================
+     * 首页大按钮样式
+     * 用于"普陪"和"礼物/选送"的入口按钮
+     * ============================================ */
+    .home-btn {
+      /* 宽度填满 */
+      width: 100%;
+      /* 内边距 */
+      padding: 20px;
+      /* 紫蓝渐变背景 */
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* 文字白色 */
+      color: #fff;
+      /* 移除边框 */
+      border: none;
+      /* 圆角 */
+      border-radius: 16px;
+      /* 字体大小，比普通按钮大 */
+      font-size: 20px;
+      /* 字体粗细 */
+      font-weight: 600;
+      /* 手型指针 */
+      cursor: pointer;
+      /* 按钮之间间距 */
+      margin-bottom: 15px;
+      /* 阴影效果 */
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    /* 首页按钮按下效果 */
+    .home-btn:active {
+      /* 按下时缩小 */
+      transform: scale(0.98);
+    }
+
+    /* ============================================
+     * 首页标题样式
+     * 显示"MCS"大标题
+     * ============================================ */
+    .home-title {
+      /* 字体大小 24px */
+      font-size: 24px;
+      /* 字体粗细 700（粗体） */
+      font-weight: 700;
+      /* 文字白色 */
+      color: #fff;
+      /* 居中对齐 */
+      text-align: center;
+      /* 标题下方间距 30px */
+      margin-bottom: 30px;
+      /* 文字阴影效果，增强可读性 */
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* ============================================
+     * 返回按钮样式
+     * 用于从计算页返回首页
+     * ============================================ */
+    .back-btn {
+      /* 行内块级元素 */
+      display: inline-block;
+      /* 内边距 */
+      padding: 8px 16px;
+      /* 半透明白色背景 */
+      background: rgba(255,255,255,0.2);
+      /* 文字白色 */
+      color: #fff;
+      /* 移除边框 */
+      border: none;
+      /* 圆角 */
+      border-radius: 8px;
+      /* 字体大小 */
+      font-size: 14px;
+      /* 手型指针 */
+      cursor: pointer;
+      /* 下方间距 */
+      margin-bottom: 15px;
+    }
+
+    /* 返回按钮按下效果 */
+    .back-btn:active {
+      /* 按下时背景更明显 */
+      background: rgba(255,255,255,0.3);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="card">
-      <div class="card-title">派单信息</div>
-      <div class="form-group">
-        <label>接待</label>
-        <input type="text" id="receptionist" placeholder="请输入接待人员" value="奶黄包" readonly>
-      </div>
-      <div class="form-group">
-        <label>陪陪</label>
-        <input type="text" id="companion" placeholder="请输入陪陪人员">
-      </div>
-      <div class="form-group">
-        <label>老板</label>
-        <input type="text" id="boss" placeholder="请输入老板昵称">
-      </div>
-      <div class="form-group">
-        <label>类型</label>
-        <input type="text" id="type" placeholder="请输入类型（仅支持普陪）">
-      </div>
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="groupOrder">
-          <span>团内点单</span>
-        </label>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>时长</label>
-          <div class="input-row">
-            <input type="number" id="duration" step="0.5" placeholder="0.0">
-            <span>h</span>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>单价</label>
-          <div class="input-row">
-            <span>¥</span>
-            <input type="number" id="unitPrice" step="0.01" placeholder="0.00">
-          </div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>总价</label>
-        <div class="input-row">
-          <span>¥</span>
-          <input type="number" id="totalPrice" step="0.01" placeholder="自动计算">
-        </div>
-        <div class="input-hint">输入时长和单价自动计算，或手动填写</div>
-      </div>
-      <div class="form-group">
-        <label>邀请人</label>
-        <input type="text" id="inviter" placeholder="请输入邀请人（可选）">
-        <div class="input-hint">有邀请人时，接待与邀请人平分抽成各7.5%</div>
-      </div>
-      <div class="form-group">
-        <label>折扣</label>
-        <div class="input-row">
-          <input type="number" id="discount" step="0.1" min="0.1" max="9.9" placeholder="0.0">
-          <span>折</span>
-        </div>
-        <div class="input-hint">输入折扣自动计算折后总价（如9.4表示94折）</div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>加价理由</label>
-          <select id="extraReason" onchange="toggleCustomReason()">
-            <option value="">无</option>
-            <option value="深夜">深夜</option>
-            <option value="custom">自定义</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>自定义理由</label>
-          <input type="text" id="customReason" placeholder="如：心情好" style="display: none;">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>加价金额</label>
-        <div class="input-row">
-          <span>+</span>
-          <input type="number" id="extraAmount" step="0.01" placeholder="0.00">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>备注</label>
-        <textarea id="remark" rows="2" placeholder="其他备注信息"></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="calculate()">计算抽成</button>
-      <button class="rules-btn" onclick="showRules()">查看抽成规则</button>
+    <div id="homePage">
+      <div class="home-title">MCS</div>
+      <button class="home-btn" onclick="navigateTo('pupai')">普陪</button>
+      <button class="home-btn" onclick="navigateTo('gift')">礼物/选送</button>
     </div>
 
-    <div class="card" id="resultCard" style="display: none;">
-      <div class="card-title">计算结果</div>
-      <div class="result-section">
-        <div class="result-item">
-          <label>派单</label>
-          <value></value>
-        </div>
-        <div class="result-item">
+    <div id="calcPage" style="display: none;">
+      <button class="back-btn" onclick="goHome()">← 返回首页</button>
+      <div class="card">
+        <div class="card-title">派单信息</div>
+        <div class="form-group">
           <label>接待</label>
-          <value id="resReceptionist"></value>
+          <input type="text" id="receptionist" placeholder="请输入接待人员" value="奶黄包" readonly>
         </div>
-        <div class="result-item">
+        <div class="form-group">
           <label>陪陪</label>
-          <value id="resCompanion"></value>
+          <input type="text" id="companion" placeholder="请输入陪陪人员">
         </div>
-        <div class="result-item">
+        <div class="form-group">
           <label>老板</label>
-          <value id="resBoss"></value>
+          <input type="text" id="boss" placeholder="请输入老板昵称">
         </div>
-        <div class="result-item">
+        <div class="form-group">
           <label>类型</label>
-          <value id="resType"></value>
+          <input type="text" id="type" placeholder="请输入类型">
         </div>
-        <div class="result-item">
-          <label>时长</label>
-          <value id="resDuration"></value>
+        <div class="form-group" id="giftTypeGroup" style="display: none;">
+          <label>类型</label>
+          <select id="giftType">
+            <option value="选送">选送</option>
+            <option value="礼物">礼物</option>
+          </select>
         </div>
-        <div class="result-item">
+        <div class="form-group" id="groupOrderGroup">
+          <label class="checkbox-label">
+            <input type="checkbox" id="groupOrder">
+            <span>团内点单</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>时长</label>
+            <div class="input-row">
+              <input type="number" id="duration" step="0.5" placeholder="0.0">
+              <span>h</span>
+            </div>
+          </div>
+          <div class="form-group" id="quantityGroup" style="display: none;">
+            <label>份数</label>
+            <div class="input-row">
+              <input type="number" id="quantity" min="1" placeholder="1">
+              <span>份</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>单价</label>
+            <div class="input-row">
+              <span>¥</span>
+              <input type="number" id="unitPrice" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
           <label>总价</label>
-          <value><span id="resTotalPriceSymbol">¥</span><span id="resTotalPrice"></span></value>
+          <div class="input-row">
+            <span>¥</span>
+            <input type="number" id="totalPrice" step="0.01" placeholder="自动计算">
+          </div>
+          <div class="input-hint" id="totalPriceHint">输入时长和单价自动计算，或手动填写</div>
         </div>
-        <div class="result-item">
-          <label>团抽</label>
-          <value><span id="resGroupSymbol">¥</span><span id="resGroup"></span></value>
-        </div>
-        <div class="result-item">
-          <label>派抽</label>
-          <value><span id="resDispatchSymbol">¥</span><span id="resDispatch"></span></value>
-        </div>
-        <div class="result-item">
-          <label>接抽</label>
-          <value><span id="resReceptionSymbol">¥</span><span id="resReception"></span></value>
-        </div>
-        <div class="result-item" id="inviterRow" style="display: none;">
+        <div class="form-group">
           <label>邀请人</label>
-          <value id="resInviter"></value>
+          <input type="text" id="inviter" placeholder="请输入邀请人（可选）">
+          <div class="input-hint">有邀请人时，邀请人与接待/派单平分抽成</div>
         </div>
-        <div class="result-item" id="inviterCommissionRow" style="display: none;">
-          <label>邀请人抽</label>
-          <value><span id="resInviterCommissionSymbol">¥</span><span id="resInviterCommission"></span></value>
+        <div class="form-group">
+          <label>折扣</label>
+          <div class="input-row">
+            <input type="number" id="discount" step="0.1" min="0.1" max="9.9" placeholder="0.0">
+            <span>折</span>
+          </div>
+          <div class="input-hint">输入折扣自动计算折后总价（如9.4表示94折）</div>
         </div>
-        <div class="result-item highlight">
-          <label>到手</label>
-          <value><span id="resNetSymbol">¥</span><span id="resNet"></span></value>
+        <div class="form-row" id="extraRow">
+          <div class="form-group">
+            <label>加价理由</label>
+            <select id="extraReason" onchange="toggleCustomReason()">
+              <option value="">无</option>
+              <option value="深夜">深夜</option>
+              <option value="custom">自定义</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>自定义理由</label>
+            <input type="text" id="customReason" placeholder="如：心情好" style="display: none;">
+          </div>
         </div>
-        <div class="result-item">
+        <div class="form-group" id="extraAmountGroup">
+          <label>加价金额</label>
+          <div class="input-row">
+            <span>+</span>
+            <input type="number" id="extraAmount" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>备注</label>
+          <textarea id="remark" rows="2" placeholder="其他备注信息"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="calculate()">计算抽成</button>
+        <button class="rules-btn" onclick="showRules()">查看抽成规则</button>
+      </div>
+
+      <div class="result-card" id="resultCard" style="display: none;">
+        <div class="card-title">计算结果</div>
+        <div class="result-section">
+          <div class="result-item">
+            <label>接待</label>
+            <value id="resReceptionist"></value>
+          </div>
+          <div class="result-item">
+            <label>陪陪</label>
+            <value id="resCompanion"></value>
+          </div>
+          <div class="result-item">
+            <label>老板</label>
+            <value id="resBoss"></value>
+          </div>
+          <div class="result-item">
+            <label>类型</label>
+            <value id="resType"></value>
+          </div>
+          <div class="result-item">
+            <label>时长</label>
+            <value id="resDuration"></value>
+          </div>
+          <div class="result-item">
+            <label>总价</label>
+            <value><span id="resTotalPriceSymbol">¥</span><span id="resTotalPrice"></span></value>
+          </div>
+          <div class="result-item">
+            <label>团抽</label>
+            <value><span id="resGroupSymbol">¥</span><span id="resGroup"></span></value>
+          </div>
+          <div class="result-item">
+            <label>派抽</label>
+            <value><span id="resDispatchSymbol">¥</span><span id="resDispatch"></span></value>
+          </div>
+          <div class="result-item">
+            <label>接抽</label>
+            <value><span id="resReceptionSymbol">¥</span><span id="resReception"></span></value>
+          </div>
+          <div class="result-item" id="inviterRow" style="display: none;">
+            <label>邀请人</label>
+            <value id="resInviter"></value>
+          </div>
+          <div class="result-item" id="inviterCommissionRow" style="display: none;">
+            <label>邀请人抽</label>
+            <value><span id="resInviterCommissionSymbol">¥</span><span id="resInviterCommission"></span></value>
+          </div>
+          <div class="result-item value-green">
+            <label>到手</label>
+            <value><span id="resNetSymbol">¥</span><span id="resNet"></span></value>
+          </div>
+        </div>
+        <div class="result-item" id="remarkRow" style="display: none;">
           <label>备注</label>
           <value id="resRemark"></value>
         </div>
+        <button class="copy-btn" onclick="copyResult()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          一键复制
+        </button>
       </div>
-      <button class="btn btn-primary" onclick="copyResult()">一键复制</button>
-      <button class="btn btn-secondary" onclick="clearForm()">重置表单</button>
     </div>
   </div>
 
   <div class="copy-success" id="copySuccess">已复制到剪贴板</div>
-  
-  <!-- 手动复制框 -->
+
   <div class="manual-copy-box" id="manualCopyBox">
     <div class="manual-copy-content">
       <h3>手动复制</h3>
@@ -468,75 +1001,158 @@
       <button onclick="closeManualCopy()">关闭</button>
     </div>
   </div>
-  
-  <!-- 抽成规则弹窗 -->
+
   <div class="rules-modal" id="rulesModal">
     <div class="rules-content">
-      <h3>📋 抽成规则</h3>
+      <h3>抽成规则</h3>
       <div class="rule-section">
-        <h4>◼️ 单子抽成</h4>
-        <p>• 10r（包括10）以下不抽</p>
-        <p>• 10r以上团抽5%，派抽15%</p>
+        <h4>团抽</h4>
+        <p>团抽：10%</p>
       </div>
       <div class="rule-section">
-        <h4>◼️ 邀请人拉板进团</h4>
-        <p>• 接待与邀请人平分抽成一人7.5%</p>
+        <h4>派抽/接抽</h4>
+        <p>派抽：10%</p>
+        <p>接抽：10%</p>
       </div>
       <div class="rule-section">
-        <h4>◼️ 选送抽成</h4>
-        <p>• 10r以下：不抽成</p>
-        <p>• 10r以上：正常送礼抽成</p>
+        <h4>邀请人抽成</h4>
+        <p>有邀请人时，邀请人与接待/派单平分抽成（各5%）</p>
       </div>
       <div class="rule-section">
-        <h4>◼️ 冠名小卡包陪抽成</h4>
-        <p>• 团抽10%，派抽10%</p>
-        <p>• （先抽卡费再结单）</p>
-      </div>
-      <div class="rule-section">
-        <h4>◼️ 礼物抽成</h4>
-        <p>• 10r以下（包括10）不抽</p>
-        <p>• 10r以上：团抽10%，派抽/接待10%</p>
-        <p>• （非自拉板 接待5％ 拉板人5％）</p>
-      </div>
-      <div class="rule-section">
-        <h4>◼️ 团内点单</h4>
-        <p>• （不可自派自单）</p>
-        <p>• 派抽转团长，接待无抽</p>
+        <h4>时长计算</h4>
+        <p>整数时长：总价 = 时长 × 单价</p>
+        <p>x.5时长：总价 = 整数部分 × 单价 + 单价÷2 + 2</p>
       </div>
       <button class="close-btn" onclick="hideRules()">关闭</button>
     </div>
   </div>
 
   <script>
+    /**
+     * 全局变量：当前选择的派单类型
+     * @type {string} 'pupai' - 普陪类型 / 'gift' - 礼物/选送类型
+     */
+    let currentType = '';
+
+    /**
+     * 导航到计算页面
+     * 根据不同类型显示不同的表单字段
+     * - 普陪：显示类型输入框、团内点单、时长、加价等
+     * - 礼物/选送：显示类型下拉、份数，隐藏团内点单、时长、加价
+     * @param {string} type - 派单类型，'pupai' 或 'gift'
+     */
+    function navigateTo(type) {
+      // 设置当前类型
+      currentType = type;
+      // 隐藏首页，显示计算页
+      document.getElementById('homePage').style.display = 'none';
+      document.getElementById('calcPage').style.display = 'block';
+      
+      // 根据类型显示不同的表单字段
+      if (type === 'pupai') {
+        // 普陪类型：显示类型输入框、团内点单、时长、加价部分
+        document.getElementById('type').style.display = 'block';
+        document.getElementById('type').parentElement.style.display = 'block';
+        document.getElementById('giftTypeGroup').style.display = 'none';
+        document.getElementById('groupOrderGroup').style.display = 'block';
+        document.getElementById('duration').parentElement.parentElement.style.display = 'block';
+        document.getElementById('quantityGroup').style.display = 'none';
+        document.getElementById('totalPriceHint').textContent = '输入时长和单价自动计算，或手动填写';
+        document.getElementById('extraRow').style.display = 'flex';
+        document.getElementById('extraAmountGroup').style.display = 'block';
+      } else {
+        // 礼物/选送类型：显示类型下拉、份数，隐藏其他
+        document.getElementById('type').style.display = 'none';
+        document.getElementById('type').parentElement.style.display = 'none';
+        document.getElementById('giftTypeGroup').style.display = 'block';
+        document.getElementById('groupOrderGroup').style.display = 'none';
+        document.getElementById('duration').parentElement.parentElement.style.display = 'none';
+        document.getElementById('quantityGroup').style.display = 'block';
+        document.getElementById('totalPriceHint').textContent = '输入份数和单价自动计算，或手动填写';
+        document.getElementById('extraRow').style.display = 'none';
+        document.getElementById('extraAmountGroup').style.display = 'none';
+      }
+      
+      // 清空表单
+      clearForm();
+    }
+
+    /**
+     * 返回首页
+     * 隐藏计算页，显示首页
+     */
+    function goHome() {
+      document.getElementById('calcPage').style.display = 'none';
+      document.getElementById('homePage').style.display = 'block';
+      currentType = '';
+    }
+
+    /**
+     * 切换自定义加价理由的显示状态
+     * 当选择"自定义"时显示输入框，否则隐藏
+     */
+    function toggleCustomReason() {
+      const extraReason = document.getElementById('extraReason').value;
+      const customReasonInput = document.getElementById('customReason');
+      if (extraReason === 'custom') {
+        customReasonInput.style.display = 'block';
+      } else {
+        customReasonInput.style.display = 'none';
+      }
+    }
+
+    /**
+     * 核心计算函数
+     * 根据表单输入计算抽成金额和到手价
+     * 
+     * 抽成规则：
+     *  - 普陪：团抽5%，接抽/派抽15%（有邀请人时各7.5%）
+     *  - 礼物/选送：单价>10时团抽10%，接抽/派抽10%（有邀请人时各5%）
+     * 
+     * 到手价规则：
+     *  - 普陪：总价 - 所有抽成
+     *  - 礼物/选送无抽成：到手价 = 单价
+     *  - 礼物/选送有抽成：到手价 = 抽后总价 ÷ 份数
+     */
     function calculate() {
-      const receptionist = document.getElementById('receptionist').value || '-';
-      const companion = document.getElementById('companion').value || '-';
-      const boss = document.getElementById('boss').value || '-';
-      const type = document.getElementById('type').value || '-';
+      // 获取所有表单输入值
+      const receptionist = document.getElementById('receptionist').value || '';
+      const companion = document.getElementById('companion').value || '';
+      const boss = document.getElementById('boss').value || '';
+      
+      // 根据类型获取类型值：普陪从输入框，礼物/选送从下拉框
+      let type = '';
+      if (currentType === 'pupai') {
+        type = document.getElementById('type').value || '';
+      } else {
+        type = document.getElementById('giftType').value || '';
+      }
+      
       const duration = parseFloat(document.getElementById('duration').value) || 0;
+      const quantity = parseInt(document.getElementById('quantity').value) || 0;
+      const totalPrice = parseFloat(document.getElementById('totalPrice').value) || 0;
       const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
-      const inputTotalPrice = parseFloat(document.getElementById('totalPrice').value);
+      const inviter = document.getElementById('inviter').value || '';
+      const groupOrder = document.getElementById('groupOrder').checked;
       const discount = parseFloat(document.getElementById('discount').value);
       const extraReason = document.getElementById('extraReason').value;
-      const customReason = document.getElementById('customReason').value;
+      const customReason = document.getElementById('customReason').value || '';
       const extraAmount = parseFloat(document.getElementById('extraAmount').value) || 0;
-      const groupOrder = document.getElementById('groupOrder').checked;
-      const inviter = document.getElementById('inviter').value || '';
-      const customRemark = document.getElementById('remark').value;
-      
-      let autoTotalPrice = duration * unitPrice;
-      let finalPrice = inputTotalPrice !== null && !isNaN(inputTotalPrice) ? inputTotalPrice : autoTotalPrice;
-      window.manualTotalPrice = inputTotalPrice !== null && !isNaN(inputTotalPrice);
-      
+      const customRemark = document.getElementById('remark').value || '';
+
+      // 计算折后总价
+      let finalPrice = totalPrice;
       if (discount !== null && !isNaN(discount) && discount > 0) {
         finalPrice = finalPrice * (discount / 10);
       }
-      
+
+      // 构建备注字符串
       let remark = '';
       if (discount !== null && !isNaN(discount) && discount > 0) {
         remark += discount.toFixed(1) + '折';
       }
-      if (extraReason && extraAmount > 0) {
+      // 仅普陪类型有加价备注
+      if (currentType === 'pupai' && extraReason && extraAmount > 0) {
         if (remark) remark += '  ';
         let reasonText = extraReason === 'custom' ? (customReason || '加价') : extraReason;
         remark += reasonText + '+' + extraAmount.toFixed(0);
@@ -545,83 +1161,87 @@
         if (remark) remark += '  ';
         remark += customRemark.trim();
       }
-      
-      const typeLower = type.toLowerCase().trim();
 
-      let groupCommission = 0;
-      let dispatchCommission = 0;
-      let receptionCommission = 0;
-      let inviterCommission = 0;
+      // 初始化抽成金额
+      let groupCommission = 0;        // 团抽
+      let dispatchCommission = 0;     // 派抽
+      let receptionCommission = 0;    // 接抽
+      let inviterCommission = 0;      // 邀请人抽
 
-      // TODO: 暂时只保留普陪逻辑，其他类型已注释
-      /*
-      if (groupOrder) {
+      // 根据类型计算抽成
+      if (currentType === 'pupai') {
+        // 普陪：总价 > 10 时计算抽成
         if (finalPrice > 10) {
-          groupCommission = finalPrice * 0.2;
-          dispatchCommission = finalPrice * 0.15;
-        }
-      } else if (typeLower.includes('礼物') || typeLower.includes('送礼')) {
-        if (finalPrice > 10) {
-          groupCommission = finalPrice * 0.1;
-          
+          groupCommission = finalPrice * 0.05;  // 团抽5%
           if (inviter && inviter.trim()) {
-            receptionCommission = finalPrice * 0.05;
-            inviterCommission = finalPrice * 0.05;
-            dispatchCommission = finalPrice * 0.1;
-          } else {
-            receptionCommission = finalPrice * 0.1;
-          }
-        }
-      } else if (typeLower.includes('冠卡')) {
-        groupCommission = finalPrice * 0.1;
-        if (inviter && inviter.trim()) {
-          receptionCommission = finalPrice * 0.075;
-          inviterCommission = finalPrice * 0.075;
-          dispatchCommission = finalPrice * 0.1;
-        } else {
-          receptionCommission = finalPrice * 0.1;
-        }
-      } else {
-      */
-        if (finalPrice > 10) {
-          groupCommission = finalPrice * 0.05;
-          
-          if (inviter && inviter.trim()) {
+            // 有邀请人：接抽、派抽、邀请人各7.5%
             receptionCommission = finalPrice * 0.075;
             inviterCommission = finalPrice * 0.075;
             dispatchCommission = finalPrice * 0.075;
           } else {
+            // 无邀请人：接抽15%
             receptionCommission = finalPrice * 0.15;
           }
         }
-      //}
+      } else {
+        // 礼物/选送：单价 >= 10 时计算抽成
+        if (unitPrice >= 10) {
+          groupCommission = finalPrice * 0.1;   // 团抽10%
+          if (inviter && inviter.trim()) {
+            // 有邀请人：邀请人和接待各5%（原接抽10%拆分，共20%）
+            receptionCommission = finalPrice * 0.05;
+            inviterCommission = finalPrice * 0.05;
+            dispatchCommission = 0;
+          } else {
+            // 无邀请人：接抽10%（共20%）
+            receptionCommission = finalPrice * 0.1;
+          }
+        }
+      }
 
-
-      // 计算到手金额（先保留两位小数避免浮点数精度问题）
+      // 保留两位小数，避免浮点数精度问题
       const finalPriceVal = Math.round(finalPrice * 100) / 100;
       const groupVal = Math.round(groupCommission * 100) / 100;
       const dispatchVal = Math.round(dispatchCommission * 100) / 100;
       const receptionVal = Math.round(receptionCommission * 100) / 100;
       const inviterVal = Math.round(inviterCommission * 100) / 100;
       
+      // 计算净金额（到手价基础值）
       const netAmount = Math.round((finalPriceVal - groupVal - dispatchVal - receptionVal - inviterVal) * 100) / 100;
       
-      // 如果陪陪和邀请人相同，邀请人抽成加到到手上
+      // 如果陪陪就是邀请人，合并抽成
       const isCompanionInviter = companion && inviter && companion.trim() === inviter.trim();
       let actualNetAmount = netAmount;
       if (isCompanionInviter) {
         actualNetAmount = Math.round((netAmount + inviterVal) * 100) / 100;
       }
 
+      // 计算显示的到手价
+      let displayNet = actualNetAmount;
+      if (currentType !== 'pupai') {
+        // 礼物/选送类型特殊处理
+        const hasCommission = groupCommission > 0 || dispatchCommission > 0 || receptionCommission > 0 || inviterCommission > 0;
+        if (!hasCommission) {
+          // 无抽成：到手价 = 单价
+          displayNet = unitPrice;
+        } else {
+          // 有抽成：到手价 = 抽后总价 ÷ 份数
+          displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+        }
+      }
+
       document.getElementById('resReceptionist').textContent = receptionist;
       document.getElementById('resCompanion').textContent = companion;
       document.getElementById('resBoss').textContent = boss;
       document.getElementById('resType').textContent = type;
-      document.getElementById('resDuration').textContent = duration.toFixed(1) + 'h';
+      if (currentType === 'pupai') {
+        document.getElementById('resDuration').textContent = duration.toFixed(1) + 'h';
+      } else {
+        document.getElementById('resDuration').textContent = '';
+      }
       document.getElementById('resTotalPrice').textContent = finalPrice.toFixed(2);
       document.getElementById('resTotalPriceSymbol').textContent = '¥';
       
-      // 抽成为0时显示空，隐藏￥符号
       if (groupCommission > 0) {
         document.getElementById('resGroup').textContent = groupCommission.toFixed(2);
         document.getElementById('resGroupSymbol').textContent = '¥';
@@ -630,66 +1250,92 @@
         document.getElementById('resGroupSymbol').textContent = '';
       }
       
-      // 派抽和接待抽互斥：有派抽就没接抽，有接抽就没派抽
-      if (dispatchCommission > 0) {
-        document.getElementById('resDispatch').textContent = dispatchCommission.toFixed(2);
-        document.getElementById('resDispatchSymbol').textContent = '¥';
-        document.getElementById('resReception').textContent = '';
-        document.getElementById('resReceptionSymbol').textContent = '';
-      } else {
+      if (receptionCommission > 0) {
+        document.getElementById('resReception').textContent = receptionCommission.toFixed(2);
+        document.getElementById('resReceptionSymbol').textContent = '¥';
         document.getElementById('resDispatch').textContent = '';
         document.getElementById('resDispatchSymbol').textContent = '';
-        if (receptionCommission > 0) {
-          document.getElementById('resReception').textContent = receptionCommission.toFixed(2);
-          document.getElementById('resReceptionSymbol').textContent = '¥';
+      } else {
+        document.getElementById('resReception').textContent = '';
+        document.getElementById('resReceptionSymbol').textContent = '';
+        if (dispatchCommission > 0) {
+          document.getElementById('resDispatch').textContent = dispatchCommission.toFixed(2);
+          document.getElementById('resDispatchSymbol').textContent = '¥';
         } else {
-          document.getElementById('resReception').textContent = '';
-          document.getElementById('resReceptionSymbol').textContent = '';
+          document.getElementById('resDispatch').textContent = '';
+          document.getElementById('resDispatchSymbol').textContent = '';
         }
       }
-      
-      document.getElementById('resNet').textContent = actualNetAmount.toFixed(2);
+
+      // 邀请人和邀请人抽成显示逻辑
+      // 无论是否有邀请人，都显示这两个字段
+      document.getElementById('inviterRow').style.display = 'flex';
+      document.getElementById('inviterCommissionRow').style.display = 'flex';
+      if (inviter && inviter.trim()) {
+        document.getElementById('resInviter').textContent = inviter;
+        // 礼物/选送模块：如果邀请人抽成为0，显示为空
+        if (currentType !== 'pupai' && inviterCommission === 0) {
+          document.getElementById('resInviterCommission').textContent = '';
+          document.getElementById('resInviterCommissionSymbol').textContent = '';
+        } else {
+          document.getElementById('resInviterCommission').textContent = inviterCommission.toFixed(2);
+          document.getElementById('resInviterCommissionSymbol').textContent = '¥';
+        }
+      } else {
+        // 无邀请人时，值留空
+        document.getElementById('resInviter').textContent = '';
+        document.getElementById('resInviterCommission').textContent = '';
+        document.getElementById('resInviterCommissionSymbol').textContent = '';
+      }
+
+      document.getElementById('resNet').textContent = displayNet.toFixed(2);
       document.getElementById('resNetSymbol').textContent = '¥';
       document.getElementById('resRemark').textContent = remark;
 
-      if (inviter && inviter.trim()) {
-        document.getElementById('inviterRow').style.display = 'flex';
-        document.getElementById('inviterCommissionRow').style.display = 'flex';
-        document.getElementById('resInviter').textContent = inviter;
-        // 如果陪陪和邀请人相同，邀请人抽成已加到到手上，但金额仍正常显示
-        if (inviterCommission > 0) {
-          document.getElementById('resInviterCommission').textContent = inviterCommission.toFixed(2);
-          document.getElementById('resInviterCommissionSymbol').textContent = '¥';
-        } else {
-          document.getElementById('resInviterCommission').textContent = '';
-          document.getElementById('resInviterCommissionSymbol').textContent = '';
-        }
+      if (remark) {
+        document.getElementById('remarkRow').style.display = 'flex';
       } else {
-        document.getElementById('inviterRow').style.display = 'none';
-        document.getElementById('inviterCommissionRow').style.display = 'none';
+        document.getElementById('remarkRow').style.display = 'none';
       }
 
       document.getElementById('resultCard').style.display = 'block';
     }
 
+    /**
+     * 复制计算结果到剪贴板
+     * 构建格式化的文本内容并复制
+     * 礼物/选送类型不显示时长和份数信息
+     */
     function copyResult() {
+      // 构建复制内容
       let result = `派单：\n`;
       result += `接待：${document.getElementById('receptionist').value || ''}\n`;
       result += `陪陪：${document.getElementById('companion').value || ''}\n`;
       result += `老板：${document.getElementById('boss').value || ''}\n`;
-      result += `类型：${document.getElementById('type').value || ''}\n`;
-      result += `时长：${(parseFloat(document.getElementById('duration').value) || 0).toFixed(1)}h\n`;
-      result += `总价：${document.getElementById('resTotalPrice').textContent}\n`;
       
+      // 根据类型获取类型值
+      let type = '';
+      if (currentType === 'pupai') {
+        type = document.getElementById('type').value || '';
+      } else {
+        type = document.getElementById('giftType').value || '';
+      }
+      result += `类型：${type}\n`;
+      
+      // 仅普陪类型显示时长
+      if (currentType !== 'gift') {
+        result += `时长：${(parseFloat(document.getElementById('duration').value) || 0).toFixed(1)}h\n`;
+      }
+      // 礼物/选送的份数不显示在复制内容中
+      
+      result += `总价：${document.getElementById('resTotalPrice').textContent}\n`;
       result += `团抽：${document.getElementById('resGroup').textContent}\n`;
       result += `派抽：${document.getElementById('resDispatch').textContent}\n`;
       result += `接抽：${document.getElementById('resReception').textContent}\n`;
       
-      const inviter = document.getElementById('inviter').value;
-      if (inviter && inviter.trim()) {
-        result += `邀请人：${inviter}\n`;
-        result += `邀请人抽：${document.getElementById('resInviterCommission').textContent}\n`;
-      }
+      // 邀请人和邀请人抽成始终显示（值可能为空）
+      result += `邀请人：${document.getElementById('resInviter').textContent}\n`;
+      result += `邀请人抽：${document.getElementById('resInviterCommission').textContent}\n`;
       
       result += `到手：${document.getElementById('resNet').textContent}\n`;
       result += `备注：${document.getElementById('resRemark').textContent}\n`;
@@ -740,6 +1386,11 @@
       }, 2000);
     }
     
+    /**
+     * 显示手动复制弹窗
+     * 当自动复制失败时使用，让用户手动复制
+     * @param {string} text - 要复制的文本内容
+     */
     function showManualCopy(text) {
       const copyBox = document.getElementById('manualCopyBox');
       const copyTextarea = document.getElementById('copyTextarea');
@@ -747,62 +1398,104 @@
       copyBox.style.display = 'flex';
       copyTextarea.select();
     }
-    
+
+    /** 关闭手动复制弹窗 */
     function closeManualCopy() {
       document.getElementById('manualCopyBox').style.display = 'none';
     }
 
+    /** 显示抽成规则弹窗 */
+    function showRules() {
+      document.getElementById('rulesModal').classList.add('show');
+    }
+
+    /** 隐藏抽成规则弹窗 */
+    function hideRules() {
+      document.getElementById('rulesModal').classList.remove('show');
+    }
+
+    /**
+     * 从陪陪字段自动读取份数
+     * 礼物/选送类型专用
+     * 以空格分割陪陪名称，数量即为份数
+     * 例如：
+     *   "八戒 小竹" → 2份
+     *   "八戒小竹" → 1份
+     *   "八戒 小竹 小竹小竹" → 3份
+     */
+    function autoQuantityFromCompanion() {
+      if (currentType !== 'gift') return;
+      const companion = document.getElementById('companion').value || '';
+      let quantity = 0;
+      if (companion.trim()) {
+        const names = companion.trim().split(/\s+/);
+        quantity = names.length;
+      }
+      document.getElementById('quantity').value = quantity || '';
+      updateTotalPrice();
+    }
+
+    /**
+     * 清空表单
+     * 重置所有输入字段为初始状态
+     */
     function clearForm() {
-      document.getElementById('receptionist').value = '奶黄包';
       document.getElementById('companion').value = '';
       document.getElementById('boss').value = '';
       document.getElementById('type').value = '';
       document.getElementById('duration').value = '';
+      document.getElementById('quantity').value = '';
       document.getElementById('unitPrice').value = '';
       document.getElementById('totalPrice').value = '';
       document.getElementById('inviter').value = '';
       document.getElementById('discount').value = '';
       document.getElementById('extraReason').value = '';
-      document.getElementById('extraAmount').value = '';
       document.getElementById('customReason').value = '';
       document.getElementById('customReason').style.display = 'none';
-      document.getElementById('groupOrder').checked = false;
+      document.getElementById('extraAmount').value = '';
       document.getElementById('remark').value = '';
+      document.getElementById('groupOrder').checked = false;
       document.getElementById('resultCard').style.display = 'none';
       window.manualTotalPrice = false;
     }
 
-    function showRules() {
-      document.getElementById('rulesModal').classList.add('show');
-    }
-
-    function hideRules() {
-      document.getElementById('rulesModal').classList.remove('show');
-    }
-
-    document.getElementById('rulesModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        hideRules();
-      }
-    });
-    
+    /**
+     * 自动更新总价
+     * 普陪类型：根据时长和单价自动计算
+     *   - 整数时长：总价 = 时长 × 单价
+     *   - x.5时长：总价 = 整数部分 × 单价 + 单价÷2 + 2
+     * 礼物/选送类型：根据份数和单价自动计算
+     *   - 总价 = 份数 × 单价
+     * 如果用户手动修改了总价，则不再自动更新
+     */
     function updateTotalPrice() {
       if (window.manualTotalPrice) {
         return;
       }
-      const duration = parseFloat(document.getElementById('duration').value) || 0;
       const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
       const totalPriceInput = document.getElementById('totalPrice');
       
       let autoTotal = 0;
-      if (duration > 0 && unitPrice > 0) {
-        const integerPart = Math.floor(duration);
-        const decimalPart = duration - integerPart;
-        
-        if (decimalPart === 0) {
-          autoTotal = integerPart * unitPrice;
-        } else if (decimalPart === 0.5) {
-          autoTotal = integerPart * unitPrice + unitPrice / 2 + 2;
+      if (currentType === 'pupai') {
+        // 普陪：基于时长计算
+        const duration = parseFloat(document.getElementById('duration').value) || 0;
+        if (duration > 0 && unitPrice > 0) {
+          const integerPart = Math.floor(duration);
+          const decimalPart = duration - integerPart;
+          
+          if (decimalPart === 0) {
+            // 整数时长
+            autoTotal = integerPart * unitPrice;
+          } else if (decimalPart === 0.5) {
+            // x.5时长：加收2元
+            autoTotal = integerPart * unitPrice + unitPrice / 2 + 2;
+          }
+        }
+      } else {
+        // 礼物/选送：基于份数计算
+        const quantity = parseInt(document.getElementById('quantity').value) || 0;
+        if (quantity > 0 && unitPrice > 0) {
+          autoTotal = quantity * unitPrice;
         }
       }
       
@@ -813,6 +1506,11 @@
       }
     }
     
+    /**
+     * 验证并修正时长输入
+     * 只接受整数或.x格式（如 1, 2.5, 3.5）
+     * 小数部分非0或0.5时自动修正
+     */
     function validateDuration() {
       const input = document.getElementById('duration');
       let value = input.value;
@@ -835,18 +1533,20 @@
         updateTotalPrice();
       }
     }
-    
+
     document.getElementById('duration').addEventListener('input', function() {
       validateDuration();
       updateTotalPrice();
     });
+    document.getElementById('quantity').addEventListener('input', updateTotalPrice);
     document.getElementById('unitPrice').addEventListener('input', updateTotalPrice);
+    document.getElementById('companion').addEventListener('input', autoQuantityFromCompanion);
     
     document.getElementById('totalPrice').addEventListener('input', function() {
       const totalPriceValue = parseFloat(this.value);
       window.manualTotalPrice = totalPriceValue !== null && !isNaN(totalPriceValue);
     });
-    
+
     function toggleCustomReason() {
       const extraReason = document.getElementById('extraReason').value;
       const customReasonInput = document.getElementById('customReason');
@@ -854,7 +1554,6 @@
         customReasonInput.style.display = 'block';
       } else {
         customReasonInput.style.display = 'none';
-        customReasonInput.value = '';
       }
     }
   </script>
