@@ -4,7 +4,7 @@
   * @description MCS (Multi-Level Commission Split Settlement System) - 多级抽成分账系统
   *              本文件为系统主页面，包含普陪和礼物/选送两种派单类型的抽成计算功能
   * @author 戒者有八
-  * @version 2.12
+  * @version 2.13
   * @date 2026-06-17
   *
   * 更新历史：
@@ -1170,18 +1170,16 @@
 
       // 根据类型计算抽成
       if (currentType === 'pupai') {
-        // 普陪：总价 > 10 时计算抽成
-        if (finalPrice > 10) {
-          groupCommission = finalPrice * 0.05;  // 团抽5%
-          if (inviter && inviter.trim()) {
-            // 有邀请人：接抽、派抽、邀请人各7.5%
-            receptionCommission = finalPrice * 0.075;
-            inviterCommission = finalPrice * 0.075;
-            dispatchCommission = finalPrice * 0.075;
-          } else {
-            // 无邀请人：接抽15%
-            receptionCommission = finalPrice * 0.15;
-          }
+        // 普陪：无论总价多少都计算抽成
+        groupCommission = finalPrice * 0.05;  // 团抽5%
+        if (inviter && inviter.trim()) {
+          // 有邀请人：接抽、派抽、邀请人各7.5%
+          receptionCommission = finalPrice * 0.075;
+          inviterCommission = finalPrice * 0.075;
+          dispatchCommission = finalPrice * 0.075;
+        } else {
+          // 无邀请人：接抽15%
+          receptionCommission = finalPrice * 0.15;
         }
       } else {
         // 礼物/选送：单价 >= 10 时计算抽成

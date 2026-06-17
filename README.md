@@ -2,7 +2,7 @@
 
 > 多级抽成分账系统 - 一个用于陪玩/礼物团队的派单佣金计算工具
 
-[![Version](https://img.shields.io/badge/version-2.12-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.13-blue.svg)]()
 [![Android](https://img.shields.io/badge/platform-Android-green.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)]()
 
@@ -38,9 +38,8 @@ MCS 是一个专注于陪玩、礼物/选送等业务的**派单抽成计算工�
 
 | 条件 | 团抽 | 派抽 | 接抽 | 邀请人抽 |
 |------|------|------|------|----------|
-| 总价 > 10，无邀请人 | 5% | - | 15% | - |
-| 总价 > 10，有邀请人 | 5% | 7.5% | 7.5% | 7.5% |
-| 总价 ≤ 10 | 0% | 0% | 0% | 0% |
+| 无邀请人 | 5% | - | 15% | - |
+| 有邀请人 | 5% | 7.5% | 7.5% | 7.5% |
 
 ### 礼物/选送类型
 
@@ -124,8 +123,8 @@ android\app\build\outputs\apk\debug\app-debug.apk
 
 ```json
 {
-  "version": "2.12",
-  "versionCode": 19
+  "version": "2.13",
+  "versionCode": 20
 }
 ```
 
@@ -147,6 +146,7 @@ android\app\build\outputs\apk\debug\app-debug.apk
 
 | 版本 | 日期 | 更新说明 |
 |------|------|----------|
+| V2.13 | 2026-06-17 | 修复普陪模块抽成条件判断错误 |
 | V2.12 | 2026-06-17 | 修复礼物模块有邀请人时抽成计算错误 |
 | V2.11 | 2026-06-17 | 邀请人字段始终显示，礼物模块邀请人抽为0时显示为空 |
 | V2.10 | 2026-06-17 | 修正礼物/选送到手价计算逻辑 |
