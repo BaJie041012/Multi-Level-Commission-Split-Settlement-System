@@ -1115,6 +1115,18 @@
      *  - 礼物/选送有抽成：到手价 = 抽后总价 ÷ 份数
      */
     function calculate() {
+      // 输入验证
+      const rawTotalPrice = parseFloat(document.getElementById('totalPrice').value);
+      const rawQuantity = parseInt(document.getElementById('quantity').value) || 0;
+      
+      if (isNaN(rawTotalPrice) || rawTotalPrice <= 0) {
+        return;
+      }
+      
+      if (currentType !== 'pupai' && rawQuantity <= 0) {
+        return;
+      }
+      
       // 获取所有表单输入值
       const receptionist = document.getElementById('receptionist').value || '';
       const companion = document.getElementById('companion').value || '';
@@ -1224,7 +1236,11 @@
           displayNet = unitPrice;
         } else {
           // 有抽成：到手价 = 抽后总价 ÷ 份数
-          displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+          if (quantity > 0) {
+            displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+          } else {
+            displayNet = 0;
+          }
         }
       }
 
