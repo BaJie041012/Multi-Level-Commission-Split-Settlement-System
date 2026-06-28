@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "android": "npx cap sync android && npx cap open android"
+    "android": "npx cap sync android && npx cap open android",
+    "test": "node tests/test-commission.js"
   },
   "devDependencies": {
     "@capacitor/android": "^6.0.0",
