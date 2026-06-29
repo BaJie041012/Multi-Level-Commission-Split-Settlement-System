@@ -1047,6 +1047,8 @@
       // 隐藏首页，显示计算页
       document.getElementById('homePage').style.display = 'none';
       document.getElementById('calcPage').style.display = 'block';
+      // 重置手动总价状态
+      window.manualTotalPrice = false;
       
       // 根据类型显示不同的表单字段
       if (type === 'pupai') {
@@ -1224,7 +1226,7 @@
           displayNet = unitPrice;
         } else {
           // 有抽成：到手价 = 抽后总价 ÷ 份数
-          displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+          displayNet = quantity > 0 ? Math.round((actualNetAmount / quantity) * 100) / 100 : 0;
         }
       }
 
@@ -1517,6 +1519,11 @@
       
       const num = parseFloat(value);
       if (isNaN(num)) {
+        input.value = '';
+        return;
+      }
+      
+      if (num < 0) {
         input.value = '';
         return;
       }
