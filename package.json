@@ -7,15 +7,34 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "android": "npx cap sync android && npx cap open android"
+    "android": "npx cap sync android && npx cap open android",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "devDependencies": {
     "@capacitor/android": "^6.0.0",
     "@capacitor/cli": "^6.0.0",
     "@capacitor/core": "^6.0.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "jest": "^29.7.0"
   },
   "dependencies": {
     "mcs-app": "file:"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "tests/**/*.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "html"
+    ]
   }
 }
