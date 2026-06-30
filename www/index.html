@@ -1007,16 +1007,20 @@
       <h3>抽成规则</h3>
       <div class="rule-section">
         <h4>团抽</h4>
-        <p>团抽：10%</p>
+        <p>普陪：5%</p>
+        <p>礼物/选送（单价≥10）：10%</p>
       </div>
       <div class="rule-section">
         <h4>派抽/接抽</h4>
-        <p>派抽：10%</p>
-        <p>接抽：10%</p>
+        <p>普陪有邀请人：接抽7.5%、派抽7.5%</p>
+        <p>普陪无邀请人：接抽15%</p>
+        <p>礼物/选送有邀请人（单价≥10）：接抽5%</p>
+        <p>礼物/选送无邀请人（单价≥10）：接抽10%</p>
       </div>
       <div class="rule-section">
         <h4>邀请人抽成</h4>
-        <p>有邀请人时，邀请人与接待/派单平分抽成（各5%）</p>
+        <p>普陪：7.5%</p>
+        <p>礼物/选送（单价≥10）：5%</p>
       </div>
       <div class="rule-section">
         <h4>时长计算</h4>
@@ -1219,12 +1223,12 @@
       if (currentType !== 'pupai') {
         // 礼物/选送类型特殊处理
         const hasCommission = groupCommission > 0 || dispatchCommission > 0 || receptionCommission > 0 || inviterCommission > 0;
-        if (!hasCommission) {
-          // 无抽成：到手价 = 单价
-          displayNet = unitPrice;
-        } else {
-          // 有抽成：到手价 = 抽后总价 ÷ 份数
+        if (quantity > 0) {
+          // 有份数：到手价 = 抽后总价 ÷ 份数
           displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+        } else {
+          // 无份数：使用实际净金额
+          displayNet = actualNetAmount;
         }
       }
 
