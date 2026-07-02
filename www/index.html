@@ -1006,17 +1006,21 @@
     <div class="rules-content">
       <h3>抽成规则</h3>
       <div class="rule-section">
-        <h4>团抽</h4>
-        <p>团抽：10%</p>
+        <h4>普陪抽成</h4>
+        <p>团抽：5%</p>
+        <p>无邀请人：接抽15%</p>
+        <p>有邀请人：接抽、派抽、邀请人各7.5%</p>
       </div>
       <div class="rule-section">
-        <h4>派抽/接抽</h4>
-        <p>派抽：10%</p>
-        <p>接抽：10%</p>
+        <h4>礼物/选送抽成</h4>
+        <p>单价 < 10：无抽成</p>
+        <p>单价 >= 10：团抽10%</p>
+        <p>无邀请人：接抽10%</p>
+        <p>有邀请人：接抽、邀请人各5%</p>
       </div>
       <div class="rule-section">
-        <h4>邀请人抽成</h4>
-        <p>有邀请人时，邀请人与接待/派单平分抽成（各5%）</p>
+        <h4>团内点单</h4>
+        <p>团内点单时，派抽为0</p>
       </div>
       <div class="rule-section">
         <h4>时长计算</h4>
@@ -1181,6 +1185,10 @@
           // 无邀请人：接抽15%
           receptionCommission = finalPrice * 0.15;
         }
+        // 团内点单：不需要派抽
+        if (groupOrder) {
+          dispatchCommission = 0;
+        }
       } else {
         // 礼物/选送：单价 >= 10 时计算抽成
         if (unitPrice >= 10) {
@@ -1224,7 +1232,11 @@
           displayNet = unitPrice;
         } else {
           // 有抽成：到手价 = 抽后总价 ÷ 份数
-          displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+          if (quantity > 0) {
+            displayNet = Math.round((actualNetAmount / quantity) * 100) / 100;
+          } else {
+            displayNet = actualNetAmount;
+          }
         }
       }
 
